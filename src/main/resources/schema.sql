@@ -1,4 +1,4 @@
-INSERT INTO category (id, name, description, parent_id)
+INSERT INTO category (name, description, parent_id)
 VALUES ('Cámaras', 'Cámaras', null)
      , ('Cámaras de Fotos', 'Cámaras de Fotos', 1)
      , ('Cámaras de Video', 'Cámaras de Video', 1)
