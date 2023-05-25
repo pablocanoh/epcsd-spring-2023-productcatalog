@@ -35,12 +35,21 @@ public class ItemService {
     }
 
     public Item setOperational(String serialNumber, @RequestBody Boolean operational) {
+        Item item = findBySerialNumber(serialNumber).orElseThrow(
+                () -> new IllegalArgumentException("Could not find the item with serial number: " + serialNumber)
+            );
 
-        // TODO: complete this method:
+        if (item.getStatus().equals(ItemStatus.OPERATIONAL) && operational) {
+            throw new IllegalArgumentException("Item is already operational");
+        } else if (item.getStatus().equals(ItemStatus.NON_OPERATIONAL) && !operational) {
+            throw new IllegalArgumentException("Item is already non-operational");
+        }
 
-        return null;
+        item.setStatus(operational ? ItemStatus.OPERATIONAL : ItemStatus.NON_OPERATIONAL);
 
+        return itemRepository.save(item);
     }
+
     public Item createItem(Long productId, String serialNumber) {
 
         // bu default a new unit is OPERATIONAL

@@ -18,8 +18,8 @@ public class ProductService {
     @Autowired
     private CategoryService categoryService;
 
-    public List<Product> findAll() {
-        return productRepository.findAll();
+    public List<Product> findAll(String name, Long categoryId) {
+        return productRepository.findByNameOrCategoryId(name, categoryId);
     }
 
     public Optional<Product> findById(Long productId) {
@@ -33,11 +33,13 @@ public class ProductService {
         if (categoryId != null) {
             Optional<Category> category = categoryService.findById(categoryId);
 
-            if (category.isPresent()) {
-                product.setCategory(category.get());
-            }
+            category.ifPresent(product::setCategory);
         }
 
         return productRepository.save(product);
+    }
+
+    public void deleteProduct(Long productId) {
+        productRepository.deleteById(productId);
     }
 }

@@ -5,6 +5,7 @@ import edu.uoc.epcsd.productcatalog.controllers.dtos.CreateProductRequest;
 import edu.uoc.epcsd.productcatalog.controllers.dtos.GetProductResponse;
 import edu.uoc.epcsd.productcatalog.entities.Product;
 import edu.uoc.epcsd.productcatalog.services.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,14 +25,17 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    @Operation(summary = "Get all products and posible filter by name or category/subcategory")
     @GetMapping("/")
     @ResponseStatus(HttpStatus.OK)
-    public List<Product> getAllProducts() {
+    public List<Product> getAllProducts(@RequestParam(required = false) String name,
+                                        @RequestParam(required = false) Long categoryId) {
         log.trace("getAllProducts");
 
-        return productService.findAll();
+        return productService.findAll(name, categoryId);
     }
 
+    @Operation(summary = "Get product by id")
     @GetMapping("/{productId}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<GetProductResponse> getProductById(@PathVariable @NotNull Long productId) {
@@ -41,6 +45,7 @@ public class ProductController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Create product")
     @PostMapping
     public ResponseEntity<Long> createProduct(@RequestBody CreateProductRequest createProductRequest) {
         log.trace("createProduct");
@@ -61,9 +66,15 @@ public class ProductController {
         return ResponseEntity.created(uri).body(productId);
     }
 
-    // TODO: add the code for the missing system operations here:
-    // 1. remove product (use DELETE HTTP verb). Must remove the associated items
-    // 2. query products by name
-    // 3. query products by category/subcategory
+    @Operation(summary = "Delete product")
+    @DeleteMapping("/{productId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<Void> deleteProduct(@PathVariable @NotNull Long productId) {
+        log.trace("deleteProduct");
+
+        productService.deleteProduct(productId);
+
+        return ResponseEntity.ok().build();
+    }
 
 }

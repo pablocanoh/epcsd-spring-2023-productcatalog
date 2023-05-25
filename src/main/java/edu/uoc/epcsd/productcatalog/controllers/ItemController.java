@@ -4,6 +4,7 @@ package edu.uoc.epcsd.productcatalog.controllers;
 import edu.uoc.epcsd.productcatalog.controllers.dtos.CreateItemRequest;
 import edu.uoc.epcsd.productcatalog.entities.Item;
 import edu.uoc.epcsd.productcatalog.services.ItemService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,8 @@ public class ItemController {
     @Autowired
     private ItemService itemService;
 
-    @GetMapping("/")
+    @Operation(summary = "Get all items")
+    @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<Item> getAllItems() {
         log.trace("getAllItems");
@@ -31,6 +33,7 @@ public class ItemController {
         return itemService.findAll();
     }
 
+    @Operation(summary = "Get item by id")
     @GetMapping("/{serialNumber}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<Item> getItemById(@PathVariable @NotNull String serialNumber) {
@@ -40,6 +43,7 @@ public class ItemController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Create item")
     @PostMapping
     public ResponseEntity<String> createItem(@RequestBody CreateItemRequest createItemRequest) {
         log.trace("createItem");
@@ -55,10 +59,19 @@ public class ItemController {
         return ResponseEntity.created(uri).body(serialNumber);
     }
 
-    // TODO: add the code for the missing system operations here:
-    // 1. setOperational
-    //  * use the correct HTTP verb
-    //  * must ensure the item exists
-    //  * if the new status is OPERATIONAL, must send a UNIT_AVAILABLE message to the kafka message queue (see ItemService.createItem method)
+    @Operation(summary = "Update item status")
+    @PatchMapping("/{serialNumber}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<String> updateItemStatus(@PathVariable @NotNull String serialNumber, @RequestBody Boolean status) {
+        log.trace("updateItemStatus");
 
+        log.trace("Updating item status " + serialNumber);
+        itemService.setOperational(serialNumber, status);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{serialNumber}")
+                .buildAndExpand(serialNumber)
+                .toUri();
+
+        return ResponseEntity.created(uri).body(serialNumber);
+    }
 }
