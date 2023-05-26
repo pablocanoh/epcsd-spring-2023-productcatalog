@@ -3,6 +3,8 @@ package edu.uoc.epcsd.productcatalog.controllers;
 
 import edu.uoc.epcsd.productcatalog.controllers.dtos.CreateItemRequest;
 import edu.uoc.epcsd.productcatalog.entities.Item;
+import edu.uoc.epcsd.productcatalog.exceptions.MissingProductException;
+import edu.uoc.epcsd.productcatalog.exceptions.ProductException;
 import edu.uoc.epcsd.productcatalog.services.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.log4j.Log4j2;
@@ -10,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.constraints.NotNull;
@@ -49,8 +52,13 @@ public class ItemController {
         log.trace("createItem");
 
         log.trace("Creating item " + createItemRequest);
-        String serialNumber = itemService.createItem(createItemRequest.getProductId(),
-                createItemRequest.getSerialNumber()).getSerialNumber();
+        String serialNumber = null;
+        try {
+            serialNumber = itemService.createItem(createItemRequest.getProductId(),
+                    createItemRequest.getSerialNumber()).getSerialNumber();
+        } catch (ProductException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{serialNumber}")
                 .buildAndExpand(serialNumber)
@@ -60,18 +68,20 @@ public class ItemController {
     }
 
     @Operation(summary = "Update item status")
-    @PatchMapping("/{serialNumber}")
+    @PatchMapping("/{serialNumber}/status")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<String> updateItemStatus(@PathVariable @NotNull String serialNumber, @RequestBody Boolean status) {
         log.trace("updateItemStatus");
 
         log.trace("Updating item status " + serialNumber);
-        itemService.setOperational(serialNumber, status);
-        URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{serialNumber}")
-                .buildAndExpand(serialNumber)
-                .toUri();
+        try {
+            itemService.setOperational(serialNumber, status);
+        } catch (ProductException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (MissingProductException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
 
-        return ResponseEntity.created(uri).body(serialNumber);
+        return ResponseEntity.ok().body(serialNumber);
     }
 }

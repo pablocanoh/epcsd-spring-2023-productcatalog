@@ -2,6 +2,7 @@ package edu.uoc.epcsd.productcatalog.services;
 
 import edu.uoc.epcsd.productcatalog.entities.Category;
 import edu.uoc.epcsd.productcatalog.entities.Product;
+import edu.uoc.epcsd.productcatalog.exceptions.ProductException;
 import edu.uoc.epcsd.productcatalog.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,9 +27,12 @@ public class ProductService {
         return productRepository.findById(productId);
     }
 
-    public Product createProduct(Long categoryId, String name, String description, Double dailyPrice, String brand, String model) {
-
+    public Product createProduct(Long categoryId, String name, String description, Double dailyPrice, String brand, String model) throws ProductException {
         Product product = Product.builder().name(name).description(description).dailyPrice(dailyPrice).brand(brand).model(model).build();
+
+        if (!productRepository.findByNameOrCategoryId(name, categoryId).isEmpty()) {
+            throw new ProductException("Product already exists");
+        }
 
         if (categoryId != null) {
             Optional<Category> category = categoryService.findById(categoryId);

@@ -4,13 +4,16 @@ package edu.uoc.epcsd.productcatalog.controllers;
 import edu.uoc.epcsd.productcatalog.controllers.dtos.CreateProductRequest;
 import edu.uoc.epcsd.productcatalog.controllers.dtos.GetProductResponse;
 import edu.uoc.epcsd.productcatalog.entities.Product;
+import edu.uoc.epcsd.productcatalog.exceptions.ProductException;
 import edu.uoc.epcsd.productcatalog.services.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.constraints.NotNull;
@@ -26,7 +29,7 @@ public class ProductController {
     private ProductService productService;
 
     @Operation(summary = "Get all products and posible filter by name or category/subcategory")
-    @GetMapping("/")
+    @GetMapping()
     @ResponseStatus(HttpStatus.OK)
     public List<Product> getAllProducts(@RequestParam(required = false) String name,
                                         @RequestParam(required = false) Long categoryId) {
@@ -51,13 +54,21 @@ public class ProductController {
         log.trace("createProduct");
 
         log.trace("Creating product " + createProductRequest);
-        Long productId = productService.createProduct(
-                createProductRequest.getCategoryId(),
-                createProductRequest.getName(),
-                createProductRequest.getDescription(),
-                createProductRequest.getDailyPrice(),
-                createProductRequest.getBrand(),
-                createProductRequest.getModel()).getId();
+
+        Long productId;
+
+        try {
+            productId = productService.createProduct(
+                    createProductRequest.getCategoryId(),
+                    createProductRequest.getName(),
+                    createProductRequest.getDescription(),
+                    createProductRequest.getDailyPrice(),
+                    createProductRequest.getBrand(),
+                    createProductRequest.getModel()).getId();
+        } catch (DataIntegrityViolationException | ProductException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(productId)
@@ -68,13 +79,13 @@ public class ProductController {
 
     @Operation(summary = "Delete product")
     @DeleteMapping("/{productId}")
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<Void> deleteProduct(@PathVariable @NotNull Long productId) {
         log.trace("deleteProduct");
 
         productService.deleteProduct(productId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
 }
