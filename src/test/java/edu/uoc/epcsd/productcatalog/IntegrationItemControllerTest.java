@@ -82,6 +82,21 @@ public class IntegrationItemControllerTest extends IntegrationBaseTest{
     }
 
     @Test
+    public void testCreateItemWithSameSerialNumber() throws Exception {
+        CreateItemRequest createItemRequest = new CreateItemRequest(
+                this.item.getProduct().getId(),
+                this.item.getSerialNumber()
+        );
+
+        getMockMvc().perform(post("/items")
+                .content(getObjectMapper().writeValueAsString(createItemRequest))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(getProductKafkaTemplate(), never()).send(any(), any());
+    }
+
+    @Test
     public void testCreateItemWithInvalidProduct() throws Exception {
         CreateItemRequest createItemRequest = new CreateItemRequest(
                 123456789L,
@@ -91,7 +106,7 @@ public class IntegrationItemControllerTest extends IntegrationBaseTest{
         getMockMvc().perform(post("/items")
                 .content(getObjectMapper().writeValueAsString(createItemRequest))
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isBadRequest());
 
         verify(getProductKafkaTemplate(), never()).send(any(), any());
     }

@@ -57,7 +57,7 @@ public class ItemController {
             serialNumber = itemService.createItem(createItemRequest.getProductId(),
                     createItemRequest.getSerialNumber()).getSerialNumber();
         } catch (ProductException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{serialNumber}")

@@ -64,6 +64,10 @@ public class ItemService {
         // bu default a new unit is OPERATIONAL
         Item item = Item.builder().serialNumber(serialNumber).status(ItemStatus.OPERATIONAL).build();
 
+        if (itemRepository.findBySerialNumber(serialNumber).isPresent()) {
+            throw new ProductException("Item with serial number " + serialNumber + " already exists");
+        }
+
         Optional<Product> product = productService.findById(productId);
 
         if (product.isPresent()) {
